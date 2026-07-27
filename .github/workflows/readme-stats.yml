@@ -1,18 +1,14 @@
 name: Update README cards
 
+# Optional: generates local SVG cards when METRICS_TOKEN is configured.
+# Until then, README uses github-readme-stats.shion.dev directly.
 on:
-  schedule:
-    - cron: "0 0 * * *"
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths-ignore:
-      - "profile/**"
-      - "github-metrics.svg"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: ${{ secrets.METRICS_TOKEN != '' }}
     permissions:
       contents: write
     steps:
@@ -24,7 +20,8 @@ jobs:
           card: stats
           options: username=onkar-mandke-sp&show_icons=true&theme=nord&count_private=true
           path: profile/stats.svg
-          token: ${{ secrets.METRICS_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.METRICS_TOKEN }}
+          fail_on_error: true
 
       - name: Generate top languages card
         uses: stats-organization/github-readme-stats-action@v2
@@ -32,7 +29,8 @@ jobs:
           card: top-langs
           options: username=onkar-mandke-sp&theme=nord&layout=compact&langs_count=8&count_private=true&card_width=495
           path: profile/top-langs.svg
-          token: ${{ secrets.METRICS_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.METRICS_TOKEN }}
+          fail_on_error: true
 
       - name: Commit cards
         run: |
