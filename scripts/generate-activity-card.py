@@ -22,7 +22,6 @@ COLORS = {
     "label": "#d8dee9",
     "value": "#eceff4",
     "muted": "#616e88",
-    "accent": "#d08770",
     "icon": "#81a1c1",
 }
 
@@ -42,64 +41,83 @@ def request_json(url: str, method: str = "GET", payload: dict | None = None) -> 
         return json.load(response)
 
 
-def search_total(query: str) -> int:
-    url = f"https://api.github.com/search/issues?q={urllib.parse.quote(query)}&per_page=1"
-    try:
-        return int(request_json(url).get("total_count", 0))
-    except urllib.error.HTTPError:
-        return 0
+def graphql(query: str, variables: dict | None = None) -> dict:
+    payload = request_json(
+        "https://api.github.com/graphql",
+        method="POST",
+        payload={"query": query, "variables": variables or {}},
+    )
+    if "errors" in payload:
+        raise RuntimeError(json.dumps(payload["errors"]))
+    return payload["data"]
+
+
+def search_issue_count(query: str) -> int:
+    data = graphql(
+        """
+        query($query: String!) {
+          search(query: $query, type: ISSUE, first: 1) {
+            issueCount
+          }
+        }
+        """,
+        {"query": query},
+    )
+    return int(data["search"]["issueCount"])
 
 
 def fetch_stats() -> dict[str, int | str]:
     now = datetime.now(timezone.utc)
     start = now - timedelta(days=365)
-    variables = {
-        "login": USERNAME,
-        "from": start.strftime("%Y-%m-%dT00:00:00Z"),
-        "to": now.strftime("%Y-%m-%dT23:59:59Z"),
-    }
-    query = """
-    query($login: String!, $from: DateTime!, $to: DateTime!) {
-      user(login: $login) {
-        contributionsCollection(from: $from, to: $to) {
-          totalCommitContributions
-          totalPullRequestContributions
-          totalIssueContributions
-          totalPullRequestReviewContributions
-          restrictedContributionsCount
-          totalRepositoryContributions
-          contributionCalendar {
-            totalContributions
+    from_date = start.strftime("%Y-%m-%dT00:00:00Z")
+    to_date = now.strftime("%Y-%m-%dT23:59:59Z")
+
+    data = graphql(
+        """
+        query($login: String!, $from: DateTime!, $to: DateTime!) {
+          user(login: $login) {
+            contributionsCollection(from: $from, to: $to) {
+              totalCommitContributions
+              totalPullRequestContributions
+              totalIssueContributions
+              totalPullRequestReviewContributions
+              restrictedContributionsCount
+              totalRepositoryContributions
+              contributionCalendar { totalContributions }
+            }
+            repositoriesContributedTo(
+              contributionTypes: [COMMIT, ISSUE, PULL_REQUEST, REPOSITORY]
+              includeUserRepositories: true
+            ) {
+              totalCount
+            }
           }
         }
-        repositoriesContributedTo(
-          contributionTypes: [COMMIT, ISSUE, PULL_REQUEST, REPOSITORY]
-          includeUserRepositories: true
-        ) {
-          totalCount
-        }
-      }
-    }
-    """
-    payload = request_json("https://api.github.com/graphql", method="POST", payload={"query": query, "variables": variables})
-    if "errors" in payload:
-        raise RuntimeError(json.dumps(payload["errors"]))
+        """,
+        {"login": USERNAME, "from": from_date, "to": to_date},
+    )
 
-    user = payload["data"]["user"]
+    user = data["user"]
     collection = user["contributionsCollection"]
     calendar = collection["contributionCalendar"]
 
+    prs_total = search_issue_count(f"author:{USERNAME} type:pr")
+    prs_merged = search_issue_count(f"author:{USERNAME} type:pr is:merged")
+    prs_last_year = search_issue_count(
+        f"author:{USERNAME} type:pr created:>={start.date().isoformat()}"
+    )
+
     return {
         "commits": collection["totalCommitContributions"],
-        "prs_graph": collection["totalPullRequestContributions"],
         "issues": collection["totalIssueContributions"],
         "reviews": collection["totalPullRequestReviewContributions"],
         "repos_contributed": collection.get("totalRepositoryContributions")
         or user["repositoriesContributedTo"]["totalCount"],
         "graph_total": calendar["totalContributions"],
         "restricted": collection["restrictedContributionsCount"],
-        "prs_search": search_total(f"author:{USERNAME}+type:pr+created:>={start.date().isoformat()}"),
-        "prs_merged": search_total(f"author:{USERNAME}+type:pr+is:merged+created:>={start.date().isoformat()}"),
+        "prs_total": prs_total,
+        "prs_merged": prs_merged,
+        "prs_last_year": max(prs_last_year, collection["totalPullRequestContributions"]),
         "updated": now.astimezone().strftime("%d %b %Y, %H:%M %Z"),
     }
 
@@ -125,22 +143,22 @@ def build_svg(stats: dict[str, int | str]) -> str:
     width = 495
     height = 300
     blocks = [
-        stat_block(24, 78, "🔀", "Pull requests (last year)", stats["prs_search"], "includes private repos"),
+        stat_block(24, 78, "🔀", "Total pull requests", stats["prs_total"], "includes private repos"),
         stat_block(260, 78, "✅", "Merged PRs", stats["prs_merged"]),
-        stat_block(24, 158, "💻", "Commits on graph", stats["commits"], "contribution graph count"),
-        stat_block(260, 158, "👀", "PR reviews", stats["reviews"]),
-        stat_block(24, 238, "🗂️", "Repos contributed to", stats["repos_contributed"]),
-        stat_block(260, 238, "🔒", "Private graph activity", stats["restricted"], "aggregate only"),
+        stat_block(24, 158, "📅", "PRs last year", stats["prs_last_year"]),
+        stat_block(260, 158, "👀", "PR reviews", stats["reviews"], "last 365 days"),
+        stat_block(24, 238, "💻", "Commits on graph", stats["commits"], "contribution graph"),
+        stat_block(260, 238, "🗂️", "Repos contributed", stats["repos_contributed"], "last 365 days"),
     ]
 
     return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" role="img" aria-labelledby="title desc">
   <title id="title">{USERNAME} activity summary</title>
-  <desc id="desc">Private and public GitHub activity for the last year</desc>
+  <desc id="desc">Private and public GitHub activity summary</desc>
   <rect x="0.5" y="0.5" width="{width - 1}" height="{height - 1}" rx="4.5" fill="{COLORS['bg']}" stroke="{COLORS['border']}"/>
   <text x="24" y="34" fill="{COLORS['title']}" font-size="18" font-weight="600">Activity Summary</text>
-  <text x="24" y="56" fill="{COLORS['muted']}" font-size="12">Last 365 days · includes private activity via PAT</text>
+  <text x="24" y="56" fill="{COLORS['muted']}" font-size="12">Private + public activity · powered by METRICS_TOKEN</text>
   {''.join(blocks)}
-  <text x="24" y="{height - 14}" fill="{COLORS['muted']}" font-size="10">Graph total: {stats['graph_total']} · Updated {stats['updated']}</text>
+  <text x="24" y="{height - 14}" fill="{COLORS['muted']}" font-size="10">Graph total: {stats['graph_total']} · Private graph count: {stats['restricted']} · Updated {stats['updated']}</text>
 </svg>
 """
 
@@ -158,6 +176,6 @@ def main() -> None:
 if __name__ == "__main__":
     try:
         main()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
