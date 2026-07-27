@@ -74,7 +74,6 @@ def fetch_stats() -> dict[str, int | str]:
         repositoriesContributedTo(
           contributionTypes: [COMMIT, ISSUE, PULL_REQUEST, REPOSITORY]
           includeUserRepositories: true
-          maximumAge: 365
         ) {
           totalCount
         }
@@ -94,7 +93,8 @@ def fetch_stats() -> dict[str, int | str]:
         "prs_graph": collection["totalPullRequestContributions"],
         "issues": collection["totalIssueContributions"],
         "reviews": collection["totalPullRequestReviewContributions"],
-        "repos_contributed": user["repositoriesContributedTo"]["totalCount"],
+        "repos_contributed": collection.get("totalRepositoryContributions")
+        or user["repositoriesContributedTo"]["totalCount"],
         "graph_total": calendar["totalContributions"],
         "restricted": collection["restrictedContributionsCount"],
         "prs_search": search_total(f"author:{USERNAME}+type:pr+created:>={start.date().isoformat()}"),
