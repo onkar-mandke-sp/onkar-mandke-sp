@@ -5,15 +5,16 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
-import urllib.error
-import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 USERNAME = os.environ.get("GITHUB_USERNAME", "onkar-mandke-sp")
 TOKEN = os.environ["GITHUB_TOKEN"]
 OUTPUT = os.environ.get("OUTPUT_PATH", "profile/activity-summary.svg")
+STATS_SVG = os.environ.get("STATS_SVG_PATH", "profile/stats.svg")
 
 COLORS = {
     "bg": "#2e3440",
@@ -66,10 +67,34 @@ def search_issue_count(query: str) -> int:
     return int(data["search"]["issueCount"])
 
 
+def parse_stats_svg(path: str) -> dict[str, int]:
+    if not Path(path).exists():
+        return {}
+
+    text = Path(path).read_text(encoding="utf-8")
+    values = [item.strip() for item in re.findall(r"<text[^>]*>([^<]+)</text>", text)]
+    mapping = {
+        "Total Stars Earned:": "stars",
+        "Total Commits (last year):": "commits",
+        "Total PRs:": "prs_total",
+        "Total Issues:": "issues",
+        "Contributed to (last year):": "contributed_to",
+    }
+
+    parsed: dict[str, int] = {}
+    for index, label in enumerate(values):
+        key = mapping.get(label)
+        if not key or index + 1 >= len(values):
+            continue
+        raw = values[index + 1].strip()
+        if raw.isdigit():
+            parsed[key] = int(raw)
+    return parsed
+
+
 def fetch_stats() -> dict[str, int | str]:
     now = datetime.now(timezone.utc)
-    start = now - timedelta(days=365)
-    from_date = start.strftime("%Y-%m-%dT00:00:00Z")
+    from_date = (now.replace(hour=0, minute=0, second=0, microsecond=0)).strftime("%Y-%m-%dT00:00:00Z")
     to_date = now.strftime("%Y-%m-%dT23:59:59Z")
 
     data = graphql(
@@ -94,30 +119,37 @@ def fetch_stats() -> dict[str, int | str]:
           }
         }
         """,
-        {"login": USERNAME, "from": from_date, "to": to_date},
+        {
+            "login": USERNAME,
+            "from": (now - timedelta(days=365)).strftime("%Y-%m-%dT00:00:00Z"),
+            "to": to_date,
+        },
     )
 
     user = data["user"]
     collection = user["contributionsCollection"]
     calendar = collection["contributionCalendar"]
+    card_stats = parse_stats_svg(STATS_SVG)
 
-    prs_total = search_issue_count(f"author:{USERNAME} type:pr")
+    prs_total = card_stats.get("prs_total", search_issue_count(f"author:{USERNAME} type:pr"))
     prs_merged = search_issue_count(f"author:{USERNAME} type:pr is:merged")
-    prs_last_year = search_issue_count(
-        f"author:{USERNAME} type:pr created:>={start.date().isoformat()}"
-    )
+    commits = card_stats.get("commits", collection["totalCommitContributions"])
+    issues = card_stats.get("issues", collection["totalIssueContributions"])
 
     return {
-        "commits": collection["totalCommitContributions"],
-        "issues": collection["totalIssueContributions"],
+        "commits": commits,
+        "issues": issues,
         "reviews": collection["totalPullRequestReviewContributions"],
-        "repos_contributed": collection.get("totalRepositoryContributions")
-        or user["repositoriesContributedTo"]["totalCount"],
+        "repos_contributed": max(
+            card_stats.get("contributed_to", 0),
+            collection.get("totalRepositoryContributions") or 0,
+            user["repositoriesContributedTo"]["totalCount"],
+        ),
         "graph_total": calendar["totalContributions"],
         "restricted": collection["restrictedContributionsCount"],
         "prs_total": prs_total,
         "prs_merged": prs_merged,
-        "prs_last_year": max(prs_last_year, collection["totalPullRequestContributions"]),
+        "prs_last_year": max(collection["totalPullRequestContributions"], 0),
         "updated": now.astimezone().strftime("%d %b %Y, %H:%M %Z"),
     }
 
@@ -145,9 +177,9 @@ def build_svg(stats: dict[str, int | str]) -> str:
     blocks = [
         stat_block(24, 78, "🔀", "Total pull requests", stats["prs_total"], "includes private repos"),
         stat_block(260, 78, "✅", "Merged PRs", stats["prs_merged"]),
-        stat_block(24, 158, "📅", "PRs last year", stats["prs_last_year"]),
+        stat_block(24, 158, "📅", "PRs on graph", stats["prs_last_year"], "contribution graph"),
         stat_block(260, 158, "👀", "PR reviews", stats["reviews"], "last 365 days"),
-        stat_block(24, 238, "💻", "Commits on graph", stats["commits"], "contribution graph"),
+        stat_block(24, 238, "💻", "Commits (last year)", stats["commits"]),
         stat_block(260, 238, "🗂️", "Repos contributed", stats["repos_contributed"], "last 365 days"),
     ]
 

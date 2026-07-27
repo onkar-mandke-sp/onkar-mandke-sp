@@ -32,6 +32,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.METRICS_TOKEN }}
           GITHUB_USERNAME: onkar-mandke-sp
           OUTPUT_PATH: profile/activity-summary.svg
+          STATS_SVG_PATH: profile/stats.svg
         run: python3 scripts/generate-activity-card.py
 
       - name: Commit profile cards
