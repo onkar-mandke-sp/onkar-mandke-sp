@@ -1,8 +1,14 @@
 name: Update README cards
 
-# Run manually after adding a valid METRICS_TOKEN secret for private repo stats.
 on:
+  schedule:
+    - cron: "0 1 * * *"
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "profile/**"
+      - "github-metrics.svg"
 
 jobs:
   build:
