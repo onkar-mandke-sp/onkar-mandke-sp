@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="495" height="300" viewBox="0 0 495 300" role="img" aria-labelledby="title desc">
+  <title id="title">onkar-mandke-sp activity summary</title>
+  <desc id="desc">Private and public GitHub activity for the last year</desc>
+  <rect x="0.5" y="0.5" width="494" height="299" rx="4.5" fill="#2e3440" stroke="#4c566a"/>
+  <text x="24" y="34" fill="#81a1c1" font-size="18" font-weight="600">Activity Summary</text>
+  <text x="24" y="56" fill="#616e88" font-size="12">Last 365 days · includes private activity via PAT</text>
+  
+    <g transform="translate(24, 78)">
+      <text x="0" y="0" fill="#81a1c1" font-size="16">🔀</text>
+      <text x="34" y="0" fill="#d8dee9" font-size="13">Pull requests (last year)</text>
+      <text x="34" y="24" fill="#eceff4" font-size="24" font-weight="700">0</text>
+      <text x="58" y="136" fill="#616e88" font-size="11">includes private repos</text>
+    </g>
+    
+    <g transform="translate(260, 78)">
+      <text x="0" y="0" fill="#81a1c1" font-size="16">✅</text>
+      <text x="34" y="0" fill="#d8dee9" font-size="13">Merged PRs</text>
+      <text x="34" y="24" fill="#eceff4" font-size="24" font-weight="700">0</text>
+      
+    </g>
+    
+    <g transform="translate(24, 158)">
+      <text x="0" y="0" fill="#81a1c1" font-size="16">💻</text>
+      <text x="34" y="0" fill="#d8dee9" font-size="13">Commits on graph</text>
+      <text x="34" y="24" fill="#eceff4" font-size="24" font-weight="700">7</text>
+      <text x="58" y="216" fill="#616e88" font-size="11">contribution graph count</text>
+    </g>
+    
+    <g transform="translate(260, 158)">
+      <text x="0" y="0" fill="#81a1c1" font-size="16">👀</text>
+      <text x="34" y="0" fill="#d8dee9" font-size="13">PR reviews</text>
+      <text x="34" y="24" fill="#eceff4" font-size="24" font-weight="700">0</text>
+      
+    </g>
+    
+    <g transform="translate(24, 238)">
+      <text x="0" y="0" fill="#81a1c1" font-size="16">🗂️</text>
+      <text x="34" y="0" fill="#d8dee9" font-size="13">Repos contributed to</text>
+      <text x="34" y="24" fill="#eceff4" font-size="24" font-weight="700">1</text>
+      
+    </g>
+    
+    <g transform="translate(260, 238)">
+      <text x="0" y="0" fill="#81a1c1" font-size="16">🔒</text>
+      <text x="34" y="0" fill="#d8dee9" font-size="13">Private graph activity</text>
+      <text x="34" y="24" fill="#eceff4" font-size="24" font-weight="700">0</text>
+      <text x="294" y="296" fill="#616e88" font-size="11">aggregate only</text>
+    </g>
+    
+  <text x="24" y="286" fill="#616e88" font-size="10">Graph total: 7 · Updated 27 Jul 2026, 10:10 UTC</text>
+</svg>
