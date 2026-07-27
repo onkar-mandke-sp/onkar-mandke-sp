@@ -67,6 +67,7 @@ def fetch_stats() -> dict[str, int | str]:
           totalIssueContributions
           totalPullRequestReviewContributions
           restrictedContributionsCount
+          totalRepositoryContributions
           contributionCalendar {
             totalContributions
           }
