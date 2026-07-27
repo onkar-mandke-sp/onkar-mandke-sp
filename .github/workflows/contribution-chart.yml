@@ -1,0 +1,25 @@
+name: Update contribution chart
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "profile/**"
+      - "github-metrics.svg"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: pipipi-dev/gcchart@v1
+        with:
+          github_user_name: onkar-mandke-sp
+          github_token: ${{ secrets.METRICS_TOKEN }}
+          outputs: |
+            contributions.svg?style=clean&theme=dark&period=365&granularity=week
+            contributions-90d.svg?style=clean&theme=dark&period=90&granularity=day
