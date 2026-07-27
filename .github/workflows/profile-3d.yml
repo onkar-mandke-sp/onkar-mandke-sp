@@ -20,7 +20,9 @@ jobs:
     steps:
       - uses: lowlighter/metrics@latest
         with:
-          token: ${{ secrets.METRICS_TOKEN || secrets.GITHUB_TOKEN }}
+          # Use GITHUB_TOKEN so metrics stay current even if METRICS_TOKEN expired.
+          # Replace METRICS_TOKEN in repo secrets to include private/org activity.
+          token: ${{ secrets.GITHUB_TOKEN }}
           user: onkar-mandke-sp
           template: classic
           base: header, activity, community, repositories, metadata

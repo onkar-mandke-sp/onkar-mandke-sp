@@ -1,14 +1,12 @@
 name: Update README cards
 
-# Optional: generates local SVG cards when METRICS_TOKEN is configured.
-# Until then, README uses github-readme-stats.shion.dev directly.
+# Run manually after adding a valid METRICS_TOKEN secret for private repo stats.
 on:
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: ${{ secrets.METRICS_TOKEN != '' }}
     permissions:
       contents: write
     steps:
