@@ -22,4 +22,3 @@ jobs:
           github_token: ${{ secrets.METRICS_TOKEN }}
           outputs: |
             contributions.svg?style=clean&theme=dark&period=365&granularity=week
-            contributions-90d.svg?style=clean&theme=dark&period=90&granularity=day
