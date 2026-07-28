@@ -8,8 +8,8 @@
         role="img"
         aria-labelledby="descId"
       >
-        <title id="titleId">onkar-mandke-sp's GitHub Stats, Rank: C+</title>
-        <desc id="descId">Total Stars Earned: 0, Total Commits  (last year) : 10, Total PRs: 62, Total Issues: 0, Contributed to (last year): 0</desc>
+        <title id="titleId">onkar-mandke-sp&#39;s GitHub Stats, Rank: C+</title>
+        <desc id="descId">Total Stars Earned: 0, Total Commits  (last year) : 11, Total PRs: 62, Total Issues: 0, Contributed to (last year): 0</desc>
         <style>
           .header {
             font: 600 18px 'Segoe UI', Ubuntu, Sans-Serif;
@@ -73,7 +73,7 @@
         stroke-dashoffset: 251.32741228718345;
       }
       to {
-        stroke-dashoffset: 213.95142085889682;
+        stroke-dashoffset: 213.83861518587432;
       }
     }
   
@@ -126,7 +126,7 @@
         y="0"
         class="header"
         data-testid="header"
-      >onkar-mandke-sp's GitHub Stats</text>
+      >onkar-mandke-sp&#39;s GitHub Stats</text>
     </g>
       </g>
     
@@ -177,7 +177,7 @@
         x="224.01"
         y="12.5"
         data-testid="commits"
-      >10</text>
+      >11</text>
     </g>
   </g><g transform="translate(0, 50)">
     <g class="stagger" style="animation-delay: 750ms" transform="translate(25, 0)">
